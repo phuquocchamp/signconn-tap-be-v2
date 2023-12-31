@@ -1,55 +1,45 @@
 from rest_framework import generics, status, authentication, permissions
 from rest_framework.authentication import TokenAuthentication, SessionAuthentication, BasicAuthentication
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from profiles.models import Profiles, Contacts
-from profiles.serializers import ProfilesSerializer, ContactSerializer
+from profiles.models import Profiles
+from profiles.serializers import ProfilesSerializer
 
 
-@api_view(['POST'])
-@authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
-def create_profile(request):
-    if request.method == 'POST':
-        profile_data = request.data
-        contacts_data = profile_data.pop('contacts')
-        contacts_serializer = ContactSerializer(data=contacts_data, many=True)
-        if contacts_serializer.is_valid():
-            Response(contacts_serializer.data, status=status.HTTP_200_OK)
-        else:
-            return Response("Contacts data invalid", status=status.HTTP_400_BAD_REQUEST)
+# @api_view(['POST'])
+# @authentication_classes([TokenAuthentication])
+# @permission_classes([IsAuthenticated])
+# def create_profile(request):
+#     if request.method == 'POST':
+#         profile_data = request.data
+#         contacts_data = profile_data.pop('contacts')
+#         contacts_serializer = ContactSerializer(data=contacts_data, many=True)
+#         if contacts_serializer.is_valid():
+#             Response(contacts_serializer.data, status=status.HTTP_200_OK)
+#         else:
+#             return Response("Contacts data invalid", status=status.HTTP_400_BAD_REQUEST)
 
 
 class CreateProfileView(APIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
+    permission_classes = [AllowAny]
+    selializer_class = ProfilesSerializer
+    def post(self, request, format=None):
+        print("sdsfgvf")
         serializer = ProfilesSerializer(data=request.data)
         if serializer.is_valid():
-            # Tạo profile
-            profile = serializer.save()
-
-            # Tạo các contacts liên quan
-            contacts_data = serializer.validated_data.get('contacts', [])
-            for contact_data in contacts_data:
-                Contacts.objects.create(
-                    profile=profile,
-                    name=contact_data['name'],
-                    link=contact_data['link']
-                )
-
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response("Profile data invalid", status=status.HTTP_400_BAD_REQUEST)
+    
 
 
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def get_name(request, name):
     profiles = Profiles.objects.filter(name=name)
     if not profiles.exists():
@@ -64,7 +54,14 @@ class ListProfile(generics.RetrieveAPIView):
     serializer_class = ProfilesSerializer
     lookup_field = "id"
     authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.AllowAny]
+
+class AllProfile(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    def get(self, request, format=None):
+        profiles = Profiles.objects.all()
+        serializer = ProfilesSerializer(profiles, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class DeleteProfile(generics.DestroyAPIView):

@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "drf_spectacular",
+    "corsheaders",
+    "sslserver",
 ]
 
 MIDDLEWARE = [
@@ -52,6 +54,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
 ]
 
 ROOT_URLCONF = "mysite.urls"
@@ -131,7 +135,19 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
+
+CORS_ALLOWED_ORIGINS = [
+    'https://localhost:3000',
+    'http://localhost:3000',
+]
+CORS_ORIGIN_ALLOW_ALL = True
+
+CORS_ALLOW_HEADERS = [
+    "*"
+]
+
+ALLOWED_HOSTS = ['*']
