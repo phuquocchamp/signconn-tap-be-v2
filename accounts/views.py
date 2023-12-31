@@ -6,6 +6,9 @@ from .models import Account
 from profiles.models import Profiles
 from .serializers import AccountSerializer, AuthTokenSerializer
 from profiles.serializers import ProfilesSerializer
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+from rest_framework.response import Response
 
 
 # Create your views here.
@@ -36,3 +39,10 @@ class ManageProfileView(generics.RetrieveAPIView):
     queryset = Profiles.objects.all()
     serializer_class = ProfilesSerializer
     lookup_field = 'id'
+
+class GetUsernameFromToken(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        username = request.user.username
+        return Response({'username': username})
