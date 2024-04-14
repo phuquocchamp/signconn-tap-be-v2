@@ -29,7 +29,9 @@ class CreateProfileView(APIView):
     selializer_class = ProfilesSerializer
     def post(self, request, format=None):
         print("sdsfgvf")
-        serializer = ProfilesSerializer(data=request.data)
+        data = request.data
+        data['user'] = request.user.id
+        serializer = ProfilesSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -61,7 +63,14 @@ class AllProfile(APIView):
     def get(self, request, format=None):
         profiles = Profiles.objects.all()
         serializer = ProfilesSerializer(profiles, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        data = serializer.data
+        responseData = []
+        for i in range(len(data)):
+            if data[i]['user'] == request.user.id:
+                responseElement = data[i]
+                responseElement.pop('user')
+                responseData.append(responseElement)
+        return Response(responseData, status=status.HTTP_200_OK)
 
 
 class DeleteProfile(generics.DestroyAPIView):
@@ -70,6 +79,13 @@ class DeleteProfile(generics.DestroyAPIView):
     lookup_field = "id"
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
+    def delete(self, request, id, format=None):
+        profile = Profiles.objects.get(id=id)
+        print(profile.user.id, request.user.id)
+        if request.user.id != profile.user.id:
+            return Response({'message': 'You are not allowed to delete this profile.'}, status=status.HTTP_403_FORBIDDEN)
+        # profile.delete()
+        return Response({'detail': 'Profile deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(['DELETE'])
@@ -81,6 +97,8 @@ def delete_profile(request, id):
     except Profiles.DoesNotExist:
         return Response({'message': 'No found profile.'}, status=status.HTTP_404_NOT_FOUND)
     if request.method == 'DELETE':
+        if request.user.id != profile.user.id:
+            return Response({'message': 'You are not allowed to delete this profile.'}, status=status.HTTP_403_FORBIDDEN)
         profile.delete()
         return Response({'detail': 'Profile deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
 
@@ -91,3 +109,15 @@ class EditProfile(generics.UpdateAPIView):
     lookup_field = "id"
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
+    def put(self, request, id, format=None):
+        profile_data = request.data
+        print(profile_data)
+        profile = Profiles.objects.get(id=id)
+        if request.user.id != profile.user.id:
+            return Response({'message': 'You are not allowed to edit this profile.'}, status=status.HTTP_403_FORBIDDEN)
+        serializer = ProfilesSerializer(profile, data=profile_data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response("Profile data invalid", status=status.HTTP_400_BAD_REQUEST)
+        

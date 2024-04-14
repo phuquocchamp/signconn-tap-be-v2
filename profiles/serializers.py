@@ -13,7 +13,7 @@ class ProfilesSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profiles
-        fields = ['id', 'name', 'slogan', 'img', 'contact']
+        fields = ['id', 'name', 'slogan', 'img', 'contact', 'user']
 
     # def create(self, validated_data):
     #     contacts_data = validated_data.pop('contacts')
